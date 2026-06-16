@@ -4,6 +4,26 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 
+type ServiceRecord = {
+  oilChangeDate: string;
+  currentKm: number;
+  dueKm: number;
+  archivedAt: Date;
+};
+
+type ClientDoc = {
+  ownerId: string;
+  name: string;
+  phone: string;
+  car: string;
+  oilChangeDate: string;
+  currentKm: number;
+  dueKm: number;
+  nextReminderAt: string;
+  history: ServiceRecord[];
+  createdAt: Date;
+};
+
 async function getOwnerId() {
   const session = await auth.api.getSession({ headers: await headers() });
   return session?.user?.id ?? null;
@@ -15,7 +35,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const { id } = await params;
   const body = await req.json();
-  const coll = db.collection("clients");
+  const coll = db.collection<ClientDoc>("clients");
 
   let _id: ObjectId;
   try { _id = new ObjectId(id); } catch { return NextResponse.json({ error: "Bad id" }, { status: 400 }); }
@@ -73,6 +93,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   let _id: ObjectId;
   try { _id = new ObjectId(id); } catch { return NextResponse.json({ error: "Bad id" }, { status: 400 }); }
 
-  await db.collection("clients").deleteOne({ _id, ownerId });
+  await db.collection<ClientDoc>("clients").deleteOne({ _id, ownerId });
   return NextResponse.json({ ok: true });
 }
