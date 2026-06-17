@@ -239,7 +239,7 @@ export default function Dashboard({ shopName }: { shopName: string }) {
               <div className="field"><label>Oil quantity</label>
                 <select value={form.oilQuantity} onChange={(e) => setForm({ ...form, oilQuantity: e.target.value })}>
                   <option value="">Select…</option>
-                  {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                  {Array.from({ length: 80 }, (_, i) => (i + 1) * 0.25).map((n) => (
                     <option key={n} value={n}>{n} L</option>
                   ))}
                 </select></div>
@@ -343,7 +343,7 @@ export default function Dashboard({ shopName }: { shopName: string }) {
                 <div className="field"><label>Oil quantity</label>
                   <select value={serviceForm.oilQuantity} onChange={(e) => setServiceForm({ ...serviceForm, oilQuantity: e.target.value })}>
                     <option value="">Select…</option>
-                    {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                    {Array.from({ length: 80 }, (_, i) => (i + 1) * 0.25).map((n) => (
                       <option key={n} value={n}>{n} L</option>
                     ))}
                   </select></div>
