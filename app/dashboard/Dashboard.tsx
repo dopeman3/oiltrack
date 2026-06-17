@@ -104,7 +104,7 @@ export default function Dashboard({ shopName }: { shopName: string }) {
   async function sendWhatsApp(c: Client) {
     const msg =
       `Aoa ${c.name}, this is a friendly reminder from ${shopName}. ` +
-      `Your ${c.car || "vehicle"} (last serviced on ${c.oilChangeDate}) is due for an oil change. ` +
+      `Your ${c.car || "vehicle"} (last serviced on ${c.oilChangeDate}) is due for an oil change at ${c.dueKm}kms. `  +
       `Please visit us at your convenience. JazakAllah!`;
     window.open(`https://wa.me/${waNumber(c.phone)}?text=${encodeURIComponent(msg)}`, "_blank");
     setSentToday((n) => n + 1);
