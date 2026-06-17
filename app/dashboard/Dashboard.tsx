@@ -3,14 +3,29 @@ import { useEffect, useState } from "react";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
-type ServiceRecord = { oilChangeDate: string; currentKm: number; dueKm: number; archivedAt?: string };
+type ServiceRecord = {
+  oilChangeDate: string; currentKm: number; dueKm: number; archivedAt?: string;
+  airFilter?: boolean; oilFilter?: boolean; oilQuantity?: number | null; oilBrand?: string;
+  acFilter?: boolean; brakeService?: boolean; brakeShoe?: boolean;
+};
 type Client = {
   _id?: string; name: string; phone: string; car: string;
   oilChangeDate: string; currentKm: number; dueKm: number;
+  airFilter?: boolean; oilFilter?: boolean; oilQuantity?: number | null; oilBrand?: string;
+  acFilter?: boolean; brakeService?: boolean; brakeShoe?: boolean;
   nextReminderAt?: string; history?: ServiceRecord[];
 };
 
-const emptyForm = { name: "", phone: "", car: "", oilChangeDate: "", currentKm: "", dueKm: "" };
+const emptyForm = {
+  name: "", phone: "", car: "", oilChangeDate: "", currentKm: "", dueKm: "",
+  airFilter: false, oilFilter: false, oilQuantity: "", oilBrand: "",
+  acFilter: false, brakeService: false, brakeShoe: false,
+};
+const emptyService = {
+  oilChangeDate: "", currentKm: "", dueKm: "",
+  airFilter: false, oilFilter: false, oilQuantity: "", oilBrand: "",
+  acFilter: false, brakeService: false, brakeShoe: false,
+};
 
 function WaIcon() {
   return (
@@ -39,6 +54,18 @@ function TrashIcon() {
   );
 }
 
+function serviceMeta(r: ServiceRecord | Client) {
+  const parts: string[] = [];
+  if (r.oilQuantity) parts.push(`${r.oilQuantity} L`);
+  if (r.oilBrand) parts.push(r.oilBrand);
+  if (r.airFilter) parts.push("Air filter ✓");
+  if (r.oilFilter) parts.push("Oil filter ✓");
+  if (r.acFilter) parts.push("AC filter ✓");
+  if (r.brakeService) parts.push("Brake service ✓");
+  if (r.brakeShoe) parts.push("Brake shoe ✓");
+  return parts.join("  ·  ");
+}
+
 export default function Dashboard({ shopName }: { shopName: string }) {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
@@ -50,7 +77,7 @@ export default function Dashboard({ shopName }: { shopName: string }) {
 
   const [editing, setEditing] = useState<Client | null>(null);
   const [editForm, setEditForm] = useState({ name: "", phone: "", car: "" });
-  const [serviceForm, setServiceForm] = useState({ oilChangeDate: "", currentKm: "", dueKm: "" });
+  const [serviceForm, setServiceForm] = useState(emptyService);
 
   useEffect(() => {
     fetch("/api/clients").then((r) => r.json())
@@ -134,7 +161,7 @@ export default function Dashboard({ shopName }: { shopName: string }) {
   function openEdit(c: Client) {
     setEditing(c);
     setEditForm({ name: c.name, phone: c.phone, car: c.car || "" });
-    setServiceForm({ oilChangeDate: "", currentKm: "", dueKm: "" });
+    setServiceForm(emptyService);
   }
   async function saveInfo() {
     if (!editing?._id) return;
@@ -143,7 +170,7 @@ export default function Dashboard({ shopName }: { shopName: string }) {
   async function logService() {
     if (!editing?._id || !serviceForm.oilChangeDate || !serviceForm.currentKm || !serviceForm.dueKm) return;
     replaceClient(await patch(editing._id, { action: "service", ...serviceForm }));
-    setServiceForm({ oilChangeDate: "", currentKm: "", dueKm: "" });
+    setServiceForm(emptyService);
   }
   async function deleteClient(c: Client) {
     if (!c._id) return;
@@ -161,7 +188,9 @@ export default function Dashboard({ shopName }: { shopName: string }) {
   const overlay: React.CSSProperties = { position: "fixed", inset: 0, background: "rgba(6,7,10,.66)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 50 };
   const modal: React.CSSProperties = { width: "100%", maxWidth: 460, maxHeight: "88vh", overflowY: "auto", background: "rgba(22,25,32,.97)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "22px 22px 24px", color: "#EDEEF1", boxShadow: "0 30px 80px rgba(0,0,0,.5)" };
   const sectionLabel: React.CSSProperties = { fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 14, margin: "20px 0 10px", color: "#EDEEF1" };
-  const histRow: React.CSSProperties = { display: "flex", justifyContent: "space-between", fontSize: 13, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.07)" };
+  const histCol: React.CSSProperties = { padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.07)" };
+  const histRow: React.CSSProperties = { display: "flex", justifyContent: "space-between", fontSize: 13 };
+  const metaLine: React.CSSProperties = { fontSize: 12, color: "#8A909A", marginTop: 4 };
   const iconBtn: React.CSSProperties = { marginLeft: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#A1A7B0", borderRadius: 8, cursor: "pointer", verticalAlign: "middle" };
   const deleteBtn: React.CSSProperties = { ...iconBtn, border: "1px solid rgba(224,103,106,.3)", color: "#E0676A" };
 
@@ -205,6 +234,39 @@ export default function Dashboard({ shopName }: { shopName: string }) {
                 <input type="number" placeholder="45000" value={form.currentKm} onChange={set("currentKm")} /></div>
               <div className="field"><label>Due km <span className="req">*</span></label>
                 <input type="number" placeholder="50000" value={form.dueKm} onChange={set("dueKm")} /></div>
+            </div>
+            <div className="row2">
+              <div className="field"><label>Oil quantity</label>
+                <select value={form.oilQuantity} onChange={(e) => setForm({ ...form, oilQuantity: e.target.value })}>
+                  <option value="">Select…</option>
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>{n} L</option>
+                  ))}
+                </select></div>
+              <div className="field"><label>Oil brand</label>
+                <input type="text" placeholder="e.g. Shell Helix 5W-30" value={form.oilBrand} onChange={set("oilBrand")} /></div>
+            </div>
+            <div className="checks">
+              <label className="check">
+                <input type="checkbox" checked={form.airFilter} onChange={(e) => setForm({ ...form, airFilter: e.target.checked })} />
+                Air filter
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={form.oilFilter} onChange={(e) => setForm({ ...form, oilFilter: e.target.checked })} />
+                Oil filter
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={form.acFilter} onChange={(e) => setForm({ ...form, acFilter: e.target.checked })} />
+                AC filter
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={form.brakeService} onChange={(e) => setForm({ ...form, brakeService: e.target.checked })} />
+                Brake service
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={form.brakeShoe} onChange={(e) => setForm({ ...form, brakeShoe: e.target.checked })} />
+                Brake shoe
+              </label>
             </div>
             <button className="btn btn--primary" onClick={addClient} disabled={saving}>
               {saving ? "Saving…" : "💾 Save client record"}
@@ -277,20 +339,59 @@ export default function Dashboard({ shopName }: { shopName: string }) {
                 <div className="field"><label>New current km</label><input type="number" value={serviceForm.currentKm} onChange={sset("currentKm")} /></div>
                 <div className="field"><label>New due km</label><input type="number" value={serviceForm.dueKm} onChange={sset("dueKm")} /></div>
               </div>
+              <div className="row2">
+                <div className="field"><label>Oil quantity</label>
+                  <select value={serviceForm.oilQuantity} onChange={(e) => setServiceForm({ ...serviceForm, oilQuantity: e.target.value })}>
+                    <option value="">Select…</option>
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n} L</option>
+                    ))}
+                  </select></div>
+                <div className="field"><label>Oil brand</label>
+                  <input type="text" placeholder="e.g. Shell Helix 5W-30" value={serviceForm.oilBrand} onChange={sset("oilBrand")} /></div>
+              </div>
+              <div className="checks">
+                <label className="check">
+                  <input type="checkbox" checked={serviceForm.airFilter} onChange={(e) => setServiceForm({ ...serviceForm, airFilter: e.target.checked })} />
+                  Air filter
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={serviceForm.oilFilter} onChange={(e) => setServiceForm({ ...serviceForm, oilFilter: e.target.checked })} />
+                  Oil filter
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={serviceForm.acFilter} onChange={(e) => setServiceForm({ ...serviceForm, acFilter: e.target.checked })} />
+                  AC filter
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={serviceForm.brakeService} onChange={(e) => setServiceForm({ ...serviceForm, brakeService: e.target.checked })} />
+                  Brake service
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={serviceForm.brakeShoe} onChange={(e) => setServiceForm({ ...serviceForm, brakeShoe: e.target.checked })} />
+                  Brake shoe
+                </label>
+              </div>
               <button className="btn--oil" style={{ width: "100%", justifyContent: "center" }} onClick={logService}>✅ Update &amp; archive old record</button>
 
               <div style={sectionLabel}>Service history</div>
               {(editing.history && editing.history.length > 0) ? (
                 <>
                   {[...editing.history].reverse().map((h, i) => (
-                    <div key={i} style={histRow}>
-                      <span>{h.oilChangeDate}</span>
-                      <span className="km">{fmtNum(h.currentKm)} → {fmtNum(h.dueKm)} km</span>
+                    <div key={i} style={histCol}>
+                      <div style={histRow}>
+                        <span>{h.oilChangeDate}</span>
+                        <span className="km">{fmtNum(h.currentKm)} → {fmtNum(h.dueKm)} km</span>
+                      </div>
+                      {serviceMeta(h) && <div style={metaLine}>{serviceMeta(h)}</div>}
                     </div>
                   ))}
-                  <div style={{ ...histRow, color: "#5FD08A", borderBottom: "none" }}>
-                    <span>{editing.oilChangeDate} (current)</span>
-                    <span className="km">{fmtNum(editing.currentKm)} → {fmtNum(editing.dueKm)} km</span>
+                  <div style={{ ...histCol, borderBottom: "none" }}>
+                    <div style={{ ...histRow, color: "#5FD08A", borderBottom: "none" }}>
+                      <span>{editing.oilChangeDate} (current)</span>
+                      <span className="km">{fmtNum(editing.currentKm)} → {fmtNum(editing.dueKm)} km</span>
+                    </div>
+                    {serviceMeta(editing) && <div style={metaLine}>{serviceMeta(editing)}</div>}
                   </div>
                 </>
               ) : (

@@ -8,6 +8,13 @@ type ServiceRecord = {
   oilChangeDate: string;
   currentKm: number;
   dueKm: number;
+  airFilter?: boolean;
+  oilFilter?: boolean;
+  oilQuantity?: number | null;
+  oilBrand?: string;
+  acFilter?: boolean;
+  brakeService?: boolean;
+  brakeShoe?: boolean;
   archivedAt: Date;
 };
 
@@ -19,6 +26,13 @@ type ClientDoc = {
   oilChangeDate: string;
   currentKm: number;
   dueKm: number;
+  airFilter?: boolean;
+  oilFilter?: boolean;
+  oilQuantity?: number | null;
+  oilBrand?: string;
+  acFilter?: boolean;
+  brakeService?: boolean;
+  brakeShoe?: boolean;
   nextReminderAt: string;
   history: ServiceRecord[];
   createdAt: Date;
@@ -66,6 +80,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           oilChangeDate: client.oilChangeDate,
           currentKm: client.currentKm,
           dueKm: client.dueKm,
+          airFilter: client.airFilter ?? false,
+          oilFilter: client.oilFilter ?? false,
+          oilQuantity: client.oilQuantity ?? null,
+          oilBrand: client.oilBrand ?? "",
+          acFilter: client.acFilter ?? false,
+          brakeService: client.brakeService ?? false,
+          brakeShoe: client.brakeShoe ?? false,
           archivedAt: new Date(),
         },
       },
@@ -73,6 +94,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         oilChangeDate: body.oilChangeDate,
         currentKm: Number(body.currentKm),
         dueKm: Number(body.dueKm),
+        airFilter: Boolean(body.airFilter),
+        oilFilter: Boolean(body.oilFilter),
+        oilQuantity: body.oilQuantity ? Number(body.oilQuantity) : null,
+        oilBrand: body.oilBrand || "",
+        acFilter: Boolean(body.acFilter),
+        brakeService: Boolean(body.brakeService),
+        brakeShoe: Boolean(body.brakeShoe),
         nextReminderAt: next.toISOString(),
       },
     });
