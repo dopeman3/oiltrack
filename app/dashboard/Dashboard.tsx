@@ -20,6 +20,25 @@ function WaIcon() {
   );
 }
 
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  );
+}
+
 export default function Dashboard({ shopName }: { shopName: string }) {
   const router = useRouter();
   const [clients, setClients] = useState<Client[]>([]);
@@ -126,6 +145,14 @@ export default function Dashboard({ shopName }: { shopName: string }) {
     replaceClient(await patch(editing._id, { action: "service", ...serviceForm }));
     setServiceForm({ oilChangeDate: "", currentKm: "", dueKm: "" });
   }
+  async function deleteClient(c: Client) {
+    if (!c._id) return;
+    if (!confirm(`Delete ${c.name}? This permanently removes the client and all service history.`)) return;
+    const id = c._id;
+    await fetch(`/api/clients/${id}`, { method: "DELETE" });
+    setClients((prev) => prev.filter((x) => x._id !== id));
+    setEditing((prev) => (prev && prev._id === id ? null : prev));
+  }
 
   const list = visible();
   const eset = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setEditForm({ ...editForm, [k]: e.target.value });
@@ -135,7 +162,8 @@ export default function Dashboard({ shopName }: { shopName: string }) {
   const modal: React.CSSProperties = { width: "100%", maxWidth: 460, maxHeight: "88vh", overflowY: "auto", background: "rgba(22,25,32,.97)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 18, padding: "22px 22px 24px", color: "#EDEEF1", boxShadow: "0 30px 80px rgba(0,0,0,.5)" };
   const sectionLabel: React.CSSProperties = { fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 14, margin: "20px 0 10px", color: "#EDEEF1" };
   const histRow: React.CSSProperties = { display: "flex", justifyContent: "space-between", fontSize: 13, padding: "9px 0", borderBottom: "1px solid rgba(255,255,255,.07)" };
-  const editBtn: React.CSSProperties = { marginLeft: 6, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#A1A7B0", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" };
+  const iconBtn: React.CSSProperties = { marginLeft: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, border: "1px solid rgba(255,255,255,.1)", background: "transparent", color: "#A1A7B0", borderRadius: 8, cursor: "pointer", verticalAlign: "middle" };
+  const deleteBtn: React.CSSProperties = { ...iconBtn, border: "1px solid rgba(224,103,106,.3)", color: "#E0676A" };
 
   return (
     <main className="app">
@@ -215,7 +243,8 @@ export default function Dashboard({ shopName }: { shopName: string }) {
                         : <span className="badge badge--ok"><span className="pip"></span>On track</span>}</td>
                       <td style={{ whiteSpace: "nowrap" }}>
                         <button className="send" onClick={() => sendWhatsApp(c)} title={`Message ${c.name}`}><WaIcon /> WhatsApp</button>
-                        <button style={editBtn} onClick={() => openEdit(c)}>Edit</button>
+                        <button style={iconBtn} onClick={() => openEdit(c)} title={`Edit ${c.name}`} aria-label="Edit"><GearIcon /></button>
+                        <button style={deleteBtn} onClick={() => deleteClient(c)} title={`Delete ${c.name}`} aria-label="Delete"><TrashIcon /></button>
                       </td>
                     </tr>
                   );
@@ -267,6 +296,15 @@ export default function Dashboard({ shopName }: { shopName: string }) {
               ) : (
                 <div style={{ fontSize: 13, color: "#7C828C", padding: "8px 0" }}>No past records yet — only the current one.</div>
               )}
+
+              <div style={{ ...sectionLabel, color: "#E0676A" }}>Danger zone</div>
+              <div style={{ fontSize: 12.5, color: "#A1A7B0", marginBottom: 10 }}>Permanently delete this client and all service history. This cannot be undone.</div>
+              <button
+                onClick={() => editing && deleteClient(editing)}
+                style={{ width: "100%", border: "1px solid rgba(224,103,106,.4)", background: "rgba(224,103,106,.08)", color: "#E0676A", borderRadius: 10, padding: "11px 14px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+              >
+                🗑 Delete client
+              </button>
             </div>
           </div>
         </div>
